@@ -4,6 +4,8 @@ import {ArrowBigRight, ArrowRight, LayersIcon, LucideClock1} from "lucide-react"
 import Button from "../../components/ui/Button";
 import Upload from "../../components/ui/Upload";
 import {useNavigate} from "react-router";
+import {useEffect, useRef, useState} from "react";
+import {createProject, getProjects} from "../../lib/puter.action";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -14,11 +16,43 @@ export function meta({}: Route.MetaArgs) {
 
 export default function Home() {
     const navigate = useNavigate();
-    const handleUploadComplete = async (base64Image) => {
-        const newId = Date.now().toString();
-        navigate(`/visualize/${newId}`);
-        return true;
-    };
+    const [projects, setProjects] = useState<DesignItem[]>([]);
+    const isCreatingProjectRef = useRef(false);
+
+    useEffect(() => {
+        getProjects().then(setProjects);
+    }, []);
+
+    const handleUploadComplete = async (base64Image: string) => {
+        try {
+            if(isCreatingProjectRef.current) return false;
+            isCreatingProjectRef.current = true;
+            const newId = Date.now().toString();
+            const name = `Residence ${newId}`;
+
+            const newItem = {
+                id: newId, name, sourceImage: base64Image,
+                renderedImage: undefined,
+                timestamp: Date.now()
+            }
+
+            const saved = await createProject({ item: newItem, visibility: 'private' });
+
+            if(!saved) {
+                console.error("Failed to create project");
+                return false;
+            }
+
+            setProjects((prev) => [saved, ...prev]);
+
+            navigate(`/visualize/${newId}`, {
+                state: saved
+            });
+            return true;
+        } finally {
+            isCreatingProjectRef.current = false;
+        }
+    }
   return (
       <div className="home">
         <Navbar />
@@ -51,7 +85,7 @@ export default function Home() {
                         <h3>Upload your floor plan</h3>
                         <p>Supports JPG, PNG formats up to 10 MB</p>
                     </div>
-                    <Upload onComplete={handleUploadComplete}/>
+                    <Upload onComplete={handleUploadComplete} />
                 </div>
             </div>
         </section>
@@ -64,29 +98,32 @@ export default function Home() {
                     </div>
                 </div>
                 <div className="projects-grid">
-                    <div className="project-card group">
-                        <div className="preview">
-                            <img src="https://roomify-mlhuk267-dfwu1i.puter.site/projects/1770803585402/rendered.png" alt="project"/>
+                    {projects.map((project)=> (
+                        <div key={project.id} className="project-card group" onClick={() => {
+                            navigate(`/visualize/${project.id}`, {
+                                state: project
+                            });
+                        }}>
+                            <div className="preview">
+                            <img src={project.renderedImage || project.sourceImage} alt="project"/>
                             <div className="badge">
-                                <span>
-                                    Community
-                                </span>
+                                <span>Community</span>
                             </div>
                         </div>
                         <div className="card-body">
                             <div>
-                                <h3>Project Milano</h3>
+                                <h3>{project.name}</h3>
                                 <div className="meta">
                                     <LucideClock1 size={12}/>
-                                    <span>{new Date("08.05.2026").toDateString()}</span>
+                                    <span>{new Date(project.timestamp).toDateString()}</span>
                                     <span>By Islam Belmerabet</span>
                                 </div>
                             </div>
                             <div className="arrow">
-                                <ArrowBigRight size={18}/>
+                                 <ArrowBigRight size={18}/>
                             </div>
                         </div>
-                    </div>
+                    </div>))}
                 </div>
             </div>
           </section>
