@@ -2,9 +2,9 @@ export const PUTER_WORKER_URL = import.meta.env.VITE_PUTER_WORKER_URL || "";
 
 // Storage Paths
 export const STORAGE_PATHS = {
-    ROOT: "roomify",
-    SOURCES: "roomify/sources",
-    RENDERS: "roomify/renders",
+    ROOT: "stanzea",
+    SOURCES: "stanzea/sources",
+    RENDERS: "stanzea/renders",
 } as const;
 
 // Timing Constants (in milliseconds)
@@ -27,7 +27,7 @@ export const IMAGE_RENDER_DIMENSION = 1024;
 // File upload limits
 export const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 MB
 
-export const ROOMIFY_RENDER_PROMPT = `
+export const STANZEA_RENDER_PROMPT = `
 TASK: Convert the input 2D floor plan into a **photorealistic, top‑down 3D architectural render**.
 
 STRICT REQUIREMENTS (do not violate):
