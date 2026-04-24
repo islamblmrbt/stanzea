@@ -68,3 +68,20 @@ export const getProject = async (id: string): Promise<DesignItem | null> => {
     }
 }
 
+export const updateProject = async (id: string, updates: Partial<DesignItem>): Promise<DesignItem | null> => {
+    try {
+        const projects = await getProjects();
+        const index = projects.findIndex(p => p.id === id);
+        if (index === -1) return null;
+
+        const updatedProject = { ...projects[index], ...updates };
+        projects[index] = updatedProject;
+
+        await puter.kv.set(PROJECTS_KEY, projects);
+        return updatedProject;
+    } catch (e) {
+        console.error("Failed to update project", e);
+        return null;
+    }
+}
+

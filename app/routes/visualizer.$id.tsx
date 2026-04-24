@@ -1,6 +1,6 @@
 import React, {useCallback, useEffect, useRef, useState} from "react";
 import {useLocation, useNavigate, useParams} from "react-router";
-import {getProject} from "../../lib/puter.action";
+import {getProject, updateProject} from "../../lib/puter.action";
 import {generate3DView} from "../../lib/ai.action";
 import {Box, Download, RefreshCcw, Share2, X} from "lucide-react";
 import Button from "../../components/ui/Button";
@@ -8,22 +8,28 @@ import Button from "../../components/ui/Button";
 const Visualizer = () =>{
     const navigate = useNavigate();
     const location = useLocation();
-    const {initialImage, initialRender, pname} = location.state || {};
+    const {sourceImage: initialImage, renderedImage: initialRender, name: pname} = (location.state as DesignItem) || {};
     const hasInitialGenerated = useRef(false);
     const [isProcessing, setIsProcessing] = useState(false);
     const [currentImage, setCurrentImage] = useState<string|null>(initialRender || null);
 
     const handleBack = () => navigate("/");
 
-    const runGeneration = async () => {
-        if(!initialImage) return;
+    const params = useParams();
+    const [project, setProject] = useState<DesignItem | null>(location.state || null);
+    const [loading, setLoading] = useState(!location.state);
+
+    const runGeneration = async (img: string) => {
+        if(!img) return;
         try {
             setIsProcessing(true);
-            const result = await generate3DView({sourceImage: initialImage});
+            const result = await generate3DView({sourceImage: img});
             if(result.renderedImage){
                 setCurrentImage(result.renderedImage);
                 // update the project with the rendered image
-
+                if (project?.id) {
+                    await updateProject(project.id, { renderedImage: result.renderedImage });
+                }
             }
         } catch (e) {
             console.error("Failed to generate image", e);
@@ -33,19 +39,17 @@ const Visualizer = () =>{
     }
 
     useEffect(() => {
-        if (!initialImage || hasInitialGenerated.current) return;
-        if (initialRender) {
-            setCurrentImage(initialRender);
+        if (!project || hasInitialGenerated.current) return;
+        
+        if (project.renderedImage) {
+            setCurrentImage(project.renderedImage);
             hasInitialGenerated.current = true;
             return;
         }
+        
         hasInitialGenerated.current = true;
-        runGeneration();
-    }, [initialImage,initialRender]);
-
-    const params = useParams();
-    const [project, setProject] = useState<DesignItem | null>(location.state || null);
-    const [loading, setLoading] = useState(!location.state);
+        runGeneration(project.sourceImage);
+    }, [project]);
 
     useEffect(() => {
         if (!project && params.id) {
@@ -84,7 +88,7 @@ const Visualizer = () =>{
                     <div className="panel-header">
                         <div className="panel-meta">
                             <p>Project</p>
-                            <h2>{"Untitled Project"}</h2>
+                            <h2>{name || "Untitled Project"}</h2>
                             <p className="note">Created By You</p>
                         </div>
                         <div className="panel-actions">
@@ -99,13 +103,11 @@ const Visualizer = () =>{
                     <div className={`render-area ${isProcessing ? "is-processing" : ""}`}>
                         {currentImage ?
                             (<img src={currentImage} alt="AI Render" className="render-img"/>)
-                            :(
+                            : sourceImage ? (
                                 <div className="render-placeholder">
-                                    {initialImage && (
-                                        <img src={initialImage} alt="Original" className="render-fallback"/>
-                                    )}
+                                        <img src={sourceImage} alt="Original" className="render-fallback"/>
                                 </div>
-                            )}
+                            ) : null}
                         {
                             isProcessing && (
                                 <div className="render-overlay">
