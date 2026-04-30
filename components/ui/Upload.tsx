@@ -29,7 +29,7 @@ const Upload: React.FC<UploadProps> = ({ onComplete }) =>{
         if (!isSignedIn) return;
 
         // Validate file type and size
-        const allowedExt = ['.jpg', '.jpeg', '.png', '.gif'];
+        const allowedExt = ['.jpg', '.jpeg', '.png', '.gif'/*, '.webp'*/];
         const lcName = fileToProcess.name.toLowerCase();
         const hasAllowedExt = allowedExt.some(ext => lcName.endsWith(ext));
         const isImageType = fileToProcess.type ? fileToProcess.type.startsWith('image/') : false;
