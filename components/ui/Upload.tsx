@@ -15,6 +15,7 @@ const Upload: React.FC<UploadProps> = ({ onComplete }) =>{
     const {isSignedIn} = useOutletContext<AuthContext>();
 
     const intervalIdRef = React.useRef<number | null>(null);
+    const isProcessingRef = React.useRef(false);
 
     React.useEffect(() => {
         return () => {
@@ -27,6 +28,8 @@ const Upload: React.FC<UploadProps> = ({ onComplete }) =>{
 
     const processFile = React.useCallback((fileToProcess: File) => {
         if (!isSignedIn) return;
+        if (isProcessingRef.current) return; // prevent duplicate processing
+        isProcessingRef.current = true;
 
         // Validate file type and size
         const allowedExt = ['.jpg', '.jpeg', '.png', '.gif'/*, '.webp'*/];
@@ -36,11 +39,13 @@ const Upload: React.FC<UploadProps> = ({ onComplete }) =>{
 
         if (!hasAllowedExt && !isImageType) {
             console.warn('Unsupported file type:', fileToProcess.type, fileToProcess.name);
+            isProcessingRef.current = false;
             return;
         }
 
         if (fileToProcess.size > MAX_FILE_SIZE) {
             console.warn('File too large:', fileToProcess.size);
+            isProcessingRef.current = false;
             return;
         }
 
@@ -63,6 +68,7 @@ const Upload: React.FC<UploadProps> = ({ onComplete }) =>{
                         }
                         setTimeout(() => {
                             onComplete?.(base64);
+                            isProcessingRef.current = false;
                         }, REDIRECT_DELAY_MS);
                     }
                     return next;
@@ -76,6 +82,7 @@ const Upload: React.FC<UploadProps> = ({ onComplete }) =>{
                 intervalIdRef.current = null;
             }
             setProgress(0);
+            isProcessingRef.current = false;
             onComplete?.(undefined);
         };
 
@@ -135,6 +142,8 @@ const Upload: React.FC<UploadProps> = ({ onComplete }) =>{
                         accept=".jpg,.jpeg,.png,.gif,image/*"
                         disabled={!isSignedIn}
                         onChange={handleChange}
+                        onDrop={(e) => { e.stopPropagation(); }}
+                        onDragOver={(e) => { e.stopPropagation(); }}
                     />
                     <div className="drop-content">
                         <div className="drop-icon">

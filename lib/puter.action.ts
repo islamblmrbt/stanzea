@@ -13,7 +13,7 @@ export const getCurrentUser = async () => {
 };
 export const PROJECTS_KEY = "stanzea_projects";
 
-export const createProject = async ({item}:CreateProjectParams): Promise<DesignItem | null | undefined> => {
+export const createProject = async ({item, visibility = "private"}:CreateProjectParams): Promise<DesignItem | null | undefined> => {
     const projectId = item.id;
     const hosting = await getOrCreateHostingConfig();
     const hostedSource = projectId ?

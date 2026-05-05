@@ -20,7 +20,13 @@ export default function Home() {
     const isCreatingProjectRef = useRef(false);
 
     useEffect(() => {
-        getProjects().then(setProjects);
+        const fetchProjects = async () => {
+            const items = await getProjects();
+
+            setProjects(items)
+        }
+
+        fetchProjects();
     }, []);
 
     const handleUploadComplete = async (base64Image: string) => {
@@ -45,8 +51,12 @@ export default function Home() {
 
             setProjects((prev) => [saved, ...prev]);
 
-            navigate(`/visualize/${saved.id}`, {
-                state: saved
+            navigate(`/visualize/${newId}`, {
+                state: {
+                    initialImage: saved.sourceImage,
+                    initialRendered: saved.renderedImage || null,
+                    name
+                }
             });
             return true;
         } finally {
